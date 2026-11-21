@@ -1,0 +1,147 @@
+extends layout
+
+block content
+  .admin-console
+    header.admin-topbar
+      .admin-brand-group
+        a.admin-wordmark(href='/admin')
+          span.admin-brand-mark: i.bi.bi-qr-code(aria-hidden='true')
+          span.admin-brand-name Event Invite
+          span.admin-brand-divider
+          span Admin
+        span.admin-secure-label
+          i.bi.bi-shield-lock(aria-hidden='true')
+          | Secure console
+      form.admin-topbar-actions(method='post' action='/admin/logout')
+        a.btn.btn-light.btn-sm(href='/') View website
+        button.btn.btn-outline-secondary.btn-sm(type='submit')
+          i.bi.bi-box-arrow-right.me-1(aria-hidden='true')
+          | Sign out
+
+    main.admin-main
+      .admin-page-heading
+        .admin-heading-copy
+          span.admin-eyebrow Platform overview
+          h1 Account management
+          p A clear overview of your organisers, their events and invitation activity.
+        if deleted
+          .alert.alert-success(role='status') Event and its generated files were deleted.
+
+      .admin-metrics(aria-label='Platform totals')
+        .admin-metric
+          span.metric-icon.metric-accounts: i.bi.bi-people(aria-hidden='true')
+          .metric-copy
+            span.metric-label Registered accounts
+            span.metric-value= stats.users
+          span.metric-caption All organiser profiles
+        .admin-metric
+          span.metric-icon.metric-events: i.bi.bi-calendar-event(aria-hidden='true')
+          .metric-copy
+            span.metric-label Events created
+            span.metric-value= stats.events
+          span.metric-caption Across all accounts
+        .admin-metric
+          span.metric-icon.metric-guests: i.bi.bi-person-vcard(aria-hidden='true')
+          .metric-copy
+            span.metric-label Guests added
+            span.metric-value= stats.guests
+          span.metric-caption Total guest records
+        .admin-metric
+          span.metric-icon.metric-cards: i.bi.bi-ticket-perforated(aria-hidden='true')
+          .metric-copy
+            span.metric-label Cards generated
+            span.metric-value= stats.cards
+          span.metric-caption Invitations ready to send
+
+      .admin-list-heading
+        .admin-list-title
+          span.admin-eyebrow Account directory
+          h2 Accounts
+        .admin-list-meta
+          span Showing page #{page} of #{pageCount}
+          span.admin-count= stats.users + ' total'
+
+      if users.length
+        .admin-user-list
+          each account in users
+            article.admin-user-card
+              header.admin-user-head
+                .admin-user-identity
+                  span.admin-avatar(aria-hidden='true')= account.fullName.slice(0, 1).toUpperCase()
+                  .admin-user-heading
+                    .admin-name-line
+                      h3= account.fullName
+                      span.admin-user-id Account ##{account.id}
+                    a.admin-user-email(href=`mailto:${account.email}`)= account.email
+                .admin-created
+                  i.bi.bi-clock-history(aria-hidden='true')
+                  span Joined #[b= account.createdAt]
+              .admin-user-details
+                .admin-detail
+                  span.admin-detail-icon: i.bi.bi-telephone(aria-hidden='true')
+                  .admin-detail-copy
+                    b Phone
+                    if account.phone
+                      a(href=`tel:${account.phone}`)= account.phone
+                    else
+                      em Not provided
+                .admin-detail
+                  span.admin-detail-icon: i.bi.bi-chat-left-text(aria-hidden='true')
+                  .admin-detail-copy
+                    b SMS credits
+                    strong= account.smsCredits
+                .admin-detail
+                  span.admin-detail-icon: i.bi.bi-whatsapp(aria-hidden='true')
+                  .admin-detail-copy
+                    b WhatsApp credits
+                    strong= account.whatsappCredits
+              .admin-events
+                .admin-events-heading
+                  div
+                    h4 Event activity
+                    p Events created by this account
+                  span.admin-count= account.events.length
+                if account.events.length
+                  .admin-event-list
+                    each event in account.events
+                      .admin-event(style=`--event-accent:${event.accentColor}`)
+                        .admin-event-info
+                          .admin-event-title
+                            b= event.eventName
+                            span.admin-event-status(class=`status-${event.status.toLowerCase()}`)= event.status
+                          .admin-event-meta
+                            span: i.bi.bi-tag(aria-hidden='true')
+                              |  #{event.category}
+                            span: i.bi.bi-calendar3(aria-hidden='true')
+                              |  #{event.eventDate}
+                            span: i.bi.bi-geo-alt(aria-hidden='true')
+                              |  #{event.venue}
+                          .admin-event-stats
+                            span
+                              i.bi.bi-people(aria-hidden='true')
+                              |  #{event.guests} guests
+                            span
+                              i.bi.bi-ticket-perforated(aria-hidden='true')
+                              |  #{event.cards} cards
+                            span
+                              i.bi.bi-check2-circle(aria-hidden='true')
+                              |  #{event.attended} checked in
+                        a.btn.btn-sm.btn-outline-danger(href=`/admin/events/${event.id}/delete?page=${page}` aria-label=`Delete ${event.eventName}` title='Delete event')
+                          i.bi.bi-trash3(aria-hidden='true')
+                          span Delete
+                else
+                  p.admin-no-events No events created yet.
+      else
+        .admin-empty
+          span.admin-empty-mark: i.bi.bi-person-lines-fill(aria-hidden='true')
+          h3 No accounts yet
+          p New organiser accounts will appear here with their events and invitation totals.
+
+      if pageCount > 1
+        nav.admin-pagination(aria-label='Account pages')
+          if page > 1
+            a.btn.btn-outline-secondary.btn-sm(href=`/admin?page=${page - 1}`) Previous
+          each pageNumber in totalPages
+            a.btn.btn-sm(class=pageNumber === page ? 'btn-primary' : 'btn-outline-secondary' href=`/admin?page=${pageNumber}` aria-current=pageNumber === page ? 'page' : false aria-label=`Page ${pageNumber}`)= pageNumber
+          if page < pageCount
+            a.btn.btn-outline-secondary.btn-sm(href=`/admin?page=${page + 1}`) Next

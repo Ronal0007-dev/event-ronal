@@ -1,0 +1,20 @@
+extends layout
+
+block content
+  .public-wrap
+    .public-card.text-center
+      h1.h5.fw-bold.mb-1 You're invited, #{guestName}!
+      p.text-muted.small.mb-3= eventName
+      if cardUrl
+        img.img-fluid.rounded.shadow.mb-3(src=cardUrl alt='Your invitation card')
+        .d-grid.gap-2
+          a.btn.btn-primary.btn-lg(href=cardUrl download=`invitation-${guestName.replace(/[^a-z0-9]+/gi, '-')}.jpg`)
+            i.bi.bi-download.me-2
+            |  Download card
+          if mapsLink
+            a.btn.btn-outline-secondary(href=mapsLink target='_blank' rel='noopener noreferrer')
+              i.bi.bi-geo-alt.me-2
+              |  Get directions
+      else
+        p.text-muted Your card is being prepared. Please check again shortly.
+      p.small.text-muted.mt-3.mb-0 #{when} · #{venue}

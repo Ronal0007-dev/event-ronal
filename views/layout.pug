@@ -1,0 +1,42 @@
+doctype html
+html(lang='en')
+  head
+    meta(charset='utf-8')
+    meta(name='viewport' content='width=device-width, initial-scale=1, viewport-fit=cover')
+    meta(name='theme-color' content='#f7f4ee')
+    title #{title} · Event Invite
+    link(href='/vendor/bootstrap/bootstrap.min.css' rel='stylesheet')
+    link(href='/vendor/bootstrap-icons/bootstrap-icons.min.css' rel='stylesheet')
+    link(rel='icon' href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2317150f'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23d9481f'/%3E%3C/svg%3E")
+    link(rel='preload' href='/fonts/fraunces-latin-wght-normal.woff2' as='font' type='font/woff2' crossorigin)
+    link(href='/css/style.css' rel='stylesheet')
+  body(class=layoutMode === 'bare' ? 'bare' : layoutMode === 'landing' ? 'app landing' : 'app')
+    if layoutMode !== 'bare'
+      header.site-nav#siteNav
+        .nav-inner
+          a.brand(href='/') Event Invite
+            i
+          if layoutMode === 'landing'
+            ul.nav-links
+              li: a(href='#how') How it works
+              li: a(href='#occasions') Occasions
+              li: a(href='#about') About
+              li: a(href='#delivery') Delivery &amp; gate
+              li: a(href='#contact') Contact
+          .nav-end
+            if currentUserId
+              a.nav-user(href='/dashboard') Dashboard
+              form(method='post' action='/logout' style='margin:0')
+                button.nav-signout(type='submit') Sign out
+            else
+              .auth-toggle(role='group' aria-label='Account')
+                a(href='/login' class=authMode === 'login' ? 'active' : '' aria-current=authMode === 'login' ? 'page' : false) Sign in
+                a(href='/register' class=authMode !== 'login' ? 'active' : '' aria-current=authMode === 'register' ? 'page' : false) Sign up
+    main
+      block content
+
+    .toast-container.position-fixed.bottom-0.end-0.p-3#toastHost(style='z-index:2000')
+
+    script(src='/vendor/bootstrap/bootstrap.bundle.min.js')
+    script(src='/js/main.js')
+    block scripts

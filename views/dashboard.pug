@@ -1,0 +1,125 @@
+extends layout
+
+block content
+  .frame
+    .page-head
+      .page-intro
+        span.eyebrow.ember Dashboard
+        h1 Habari, #{user.fullName.split(' ')[0]}.
+        p.muted.mb-0 Your next celebration starts with a guest list.
+      .ledger(aria-label='Message credits')
+        .credit-card
+          span.credit-icon: i.bi.bi-chat-left-text(aria-hidden='true')
+          .credit-copy
+            b= user.smsCredits
+            span SMS credits
+        .credit-card
+          span.credit-icon: i.bi.bi-whatsapp(aria-hidden='true')
+          .credit-copy
+            b= user.whatsappCredits
+            span WhatsApp credits
+
+    .dash-grid
+      section.dash-occasions(aria-labelledby='occHead')
+        .dash-section-head
+          div
+            span.section-kicker 01 / Create
+            h2#occHead Choose the occasion
+          p.muted Choose an event type to explore its designs and colours.
+        ul.index-list#categoryGrid
+          each c in categories
+            li
+              button.category-card(type='button' data-category=c.key data-label=c.label data-color=c.color style=`--cat:${c.color}`)
+                span.ix= c.index
+                span.nm
+                  = c.label
+                  i= c.sw
+                span.bl= c.blurb
+                span.go: i.bi.bi-arrow-right
+
+      section.dash-events(aria-labelledby='evHead')
+        .dash-section-head.events-head
+          div
+            span.section-kicker 02 / Manage
+            h2#evHead Your events
+          span.event-count= events.length
+        if events.length === 0
+          .empty-note
+            span.empty-icon: i.bi.bi-calendar2-heart(aria-hidden='true')
+            h3 Your events will appear here
+            p Create an event from the occasion list, and you can manage invitations, guest check-ins and delivery status here.
+        else
+          ul.event-list
+            each e in events
+              li
+                a.t(href=`/events/${e.id}`)= e.eventName
+                .m
+                  span.dot(style=`background:${e.meta.color}`)
+                  = e.meta.label
+                  |  · 
+                  = e.when
+                .m= e.venue
+                .bar: span(style=`width:${e.total ? Math.round((e.attended / e.total) * 100) : 0}%`)
+                .row2
+                  span.muted #{e.attended} of #{e.total} checked in
+                  span
+                    a(href=`/events/${e.id}`) Guests
+                    |  &middot; 
+                    a(href=`/scanner/${e.id}`) Scanner
+
+  //- ---------- Create event modal ----------
+  .modal.fade#eventModal(tabindex='-1' aria-labelledby='eventModalTitle' aria-hidden='true')
+    .modal-dialog.modal-xl.event-create-dialog.modal-dialog-scrollable.modal-fullscreen-sm-down
+      .modal-content
+        form#eventForm(novalidate enctype='multipart/form-data')
+          .modal-header
+            h2.modal-title#eventModalTitle New <span id="modalCategoryLabel">event</span>
+            button.btn-close(type='button' data-bs-dismiss='modal' aria-label='Close')
+          .modal-body.p-4
+            .alert.alert-danger.d-none#eventFormError(role='alert')
+            input#category(type='hidden' name='category')
+            .event-create-layout
+              .event-details-fields
+                .event-form-section-head
+                  span.section-kicker Event details
+                  p Add the information your guests will see on their invitations.
+                .event-field
+                  label.form-label(for='eventName') Event name
+                  input#eventName.form-control(type='text' name='eventName' maxlength='160' placeholder="e.g. Juma & Neema's Wedding" required)
+                .event-field-row
+                  .event-field
+                    label.form-label(for='eventDate') Date &amp; time
+                    input#eventDate.form-control(type='datetime-local' name='eventDate' required)
+                  .event-field
+                    label.form-label(for='venue') Venue
+                    input#venue.form-control(type='text' name='venue' maxlength='255' placeholder='e.g. Mlimani City Hall, Dar es Salaam' required)
+                .event-field
+                  label.form-label(for='mapsLink') Google Maps link #[span.text-muted (optional)]
+                  input#mapsLink.form-control(type='url' name='mapsLink' maxlength='500' placeholder='https://maps.google.com/...')
+                .event-field
+                  label.form-label(for='customBackground') Your own background #[span.text-muted (optional · JPG, PNG or WEBP, up to 8 MB)]
+                  input#customBackground.form-control(type='file' name='customBackground' accept='image/jpeg,image/png,image/webp')
+                  .custom-preview.d-none.mt-3#customPreviewWrap
+                    img#customPreview(alt='Custom background preview')
+                    button.btn.btn-sm.btn-outline-secondary#clearCustom(type='button') Remove
+
+              .event-design-panel
+                .event-form-section-head
+                  span.section-kicker Choose a card design
+                  p Preview each invitation, then choose the one that suits your event.
+                .colour-block#colourBlock
+                  label.form-label.d-block Card colour
+                  .swatches
+                    each c in swatches
+                      button.swatch(type='button' data-color=c style=`--c:${c}` aria-label=`Use colour ${c}`)
+                    label.swatch-custom(title='Pick any colour' aria-label='Pick a custom colour')
+                      i.bi.bi-plus-lg(aria-hidden='true')
+                      input#accentColor(type='color' name='accentColor' value='#e4572e' aria-label='Custom colour')
+                    span.color-readout#colorReadout #e4572e
+                .template-grid#templateGrid
+                  .text-muted.small Loading designs…
+          .modal-footer.px-4
+            button.btn.btn-light(type='button' data-bs-dismiss='modal') Cancel
+            button.btn.btn-primary#eventSubmit(type='submit')
+              span.spinner-border.spinner-border-sm.me-2.d-none
+              | Create and add guests

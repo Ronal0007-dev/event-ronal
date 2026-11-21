@@ -1,0 +1,230 @@
+extends layout
+
+block content
+  #eventPage.frame(data-event-id=event.id data-sms-provider=smsProvider data-wa-provider=waProvider data-accent=event.accentColor)
+    header.event-head(style=`--accent:${event.accentColor}`)
+      .lead-col
+        a.back-link(href='/dashboard') ← All events
+        h1= event.eventName
+        .facts-line
+          span
+            span.dot(style=`background:${event.accentColor}`)
+            = event.meta.label
+          span= event.when
+          span
+            = event.venue
+            if event.mapsLink
+              |  · 
+              a(href=event.mapsLink target='_blank' rel='noopener noreferrer') Map
+      .act-col
+        a.btn.btn-primary(href=`/scanner/${event.id}`) Open gate scanner
+        a.btn.btn-outline-primary(href=`/api/events/${event.id}/guests/export`) Export CSV
+
+    .tally#statsRow(aria-label='Event statistics')
+      each item in [{k:'total',l:'Guests',i:'bi-people'},{k:'withCards',l:'Cards ready',i:'bi-ticket-perforated'},{k:'smsSent',l:'SMS sent',i:'bi-chat-left-text'},{k:'waSent',l:'WhatsApp sent',i:'bi-whatsapp'},{k:'attended',l:'Checked in',i:'bi-check2-circle'}]
+        .stat-card(class=`stat-${item.k}`)
+          span.stat-icon(aria-hidden='true'): i.bi(class=item.i)
+          .stat-value(data-stat=item.k) –
+          .stat-label= item.l
+
+    unless event.usesCustomBackground
+      .colour-bar#colourBar
+        span.eyebrow Card colour
+        .swatches
+          each c in swatches
+            button.swatch(type='button' data-color=c style=`--c:${c}` aria-label=`Use colour ${c}`)
+          label.swatch-custom(title='Pick any colour') +
+            input#eventColor(type='color' value=event.accentColor aria-label='Custom colour')
+        button.btn.btn-sm.btn-outline-primary#btnApplyColor(type='button' disabled) Apply and re-create cards
+
+    .toolbar
+      button.btn.btn-primary(type='button' data-bs-toggle='modal' data-bs-target='#guestModal') Add guest
+      button.btn.btn-outline-primary(type='button' data-bs-toggle='modal' data-bs-target='#bulkModal') Bulk upload
+      button.btn.btn-outline-primary#btnGenerate(type='button') Generate cards
+      button.btn.btn-success#btnOpenSend(type='button' data-bs-toggle='modal' data-bs-target='#sendModal') Send invitations
+      button.btn.btn-outline-success#btnOpenThankYou(type='button' data-bs-toggle='modal' data-bs-target='#thankYouModal' disabled)
+        i.bi.bi-heart.me-1(aria-hidden='true')
+        | Thank checked-in guests 
+        span#thankYouAttendeeCount.badge.text-bg-light.ms-1 0
+      .grow
+        input#guestSearch.form-control(type='search' placeholder='Search guests…' aria-label='Search guests')
+
+    .guest-panel
+      .guest-panel-head
+        div
+          span.section-kicker Guest list
+          h2 Guests and invitations
+        span.guest-total#guestCount Loading guests…
+      .table-wrap
+        table.table.table-hover.align-middle#guestTable(aria-label='Event guests and invitation status')
+          thead
+            tr
+              th(style='width:44px'): input#selectAll.form-check-input(type='checkbox' aria-label='Select all')
+              th Guest
+              th Phone
+              th Card
+              th SMS
+              th WhatsApp
+              th Attendance
+              th.text-end Actions
+          tbody#guestRows
+            tr: td.text-center.text-muted.py-5(colspan='8') Loading guests…
+      .table-foot
+        small#guestRange
+        .btn-group.btn-group-sm#pager
+
+    //- ---------- Add guest modal ----------
+    .modal.fade#guestModal(tabindex='-1' aria-hidden='true')
+      .modal-dialog.modal-dialog-centered
+        .modal-content
+          form#guestForm(novalidate)
+            .modal-header
+              h2.modal-title.h5 Add a guest
+              button.btn-close(type='button' data-bs-dismiss='modal' aria-label='Close')
+            .modal-body
+              .alert.alert-danger.d-none#guestFormError
+              .mb-3
+                label.form-label(for='guestName') Guest name
+                input#guestName.form-control(type='text' name='guestName' maxlength='120' required)
+              .mb-3
+                label.form-label(for='phoneNumber') Phone number
+                input#phoneNumber.form-control(type='tel' name='phoneNumber' placeholder='0712 345 678 or +255712345678' required)
+              .mb-1
+                label.form-label.d-block Card type
+                .btn-group.w-100(role='group')
+                  input#ctSingle.btn-check(type='radio' name='cardType' value='Single' checked)
+                  label.btn.btn-outline-primary(for='ctSingle') Single (1 person)
+                  input#ctDouble.btn-check(type='radio' name='cardType' value='Double')
+                  label.btn.btn-outline-primary(for='ctDouble') Double (2 people)
+            .modal-footer
+              button.btn.btn-light(type='button' data-bs-dismiss='modal') Cancel
+              button.btn.btn-primary(type='submit')
+                span.spinner-border.spinner-border-sm.me-2.d-none
+                | Add guest
+
+    //- ---------- Bulk upload modal ----------
+    .modal.fade#bulkModal(tabindex='-1' aria-hidden='true')
+      .modal-dialog.modal-dialog-centered
+        .modal-content
+          form#bulkForm(novalidate)
+            .modal-header
+              h2.modal-title.h5 Bulk upload guests
+              button.btn-close(type='button' data-bs-dismiss='modal' aria-label='Close')
+            .modal-body
+              p.text-muted.small.mb-3
+                | Upload a #[strong .csv] or #[strong .xlsx] file with the columns #[code Name], #[code Phone], #[code CardType] (Single/Double). Phone numbers like 0712345678, 712345678 or +255712345678 are all accepted.
+                |  
+                a(href='/sample-guests.csv' download) Download a sample file
+              .alert.alert-danger.d-none#bulkError
+              input#bulkFile.form-control(type='file' name='file' accept='.csv,.xlsx' required)
+              #bulkReport.mt-3.small.d-none
+            .modal-footer
+              button.btn.btn-light(type='button' data-bs-dismiss='modal') Close
+              button.btn.btn-primary(type='submit')
+                span.spinner-border.spinner-border-sm.me-2.d-none
+                | Upload
+
+    //- ---------- Send invitations modal ----------
+    .modal.fade#sendModal(tabindex='-1' aria-hidden='true')
+      .modal-dialog.modal-dialog-centered
+        .modal-content
+          form#sendForm(novalidate)
+            .modal-header
+              h2.modal-title.h5 Send invitations
+              button.btn-close(type='button' data-bs-dismiss='modal' aria-label='Close')
+            .modal-body
+              if smsProvider === 'log' || waProvider === 'log'
+                .alert.alert-warning.small
+                  i.bi.bi-exclamation-triangle.me-1
+                  | Test mode: #{[smsProvider === 'log' ? 'SMS' : null, waProvider === 'log' ? 'WhatsApp' : null].filter(Boolean).join(' and ')} messages are only printed to the server log, not delivered. Configure a provider in #[code .env].
+              .alert.alert-danger.d-none#sendError
+              label.form-label.d-block.fw-semibold How should guests receive their card?
+              .delivery-options.mb-3
+                input#chSms.btn-check(type='radio' name='channel' value='SMS')
+                label.delivery-option(for='chSms')
+                  i.bi.bi-chat-dots
+                  strong Short message (SMS)
+                  small Text with event details and a link to view/download the card
+                input#chWa.btn-check(type='radio' name='channel' value='WHATSAPP')
+                label.delivery-option(for='chWa')
+                  i.bi.bi-whatsapp
+                  strong WhatsApp
+                  small The card image with a caption
+                input#chBoth.btn-check(type='radio' name='channel' value='BOTH' checked)
+                label.delivery-option(for='chBoth')
+                  i.bi.bi-send-check
+                  strong Both
+                  small SMS and WhatsApp at the same time
+              label.form-label.d-block.fw-semibold Who should receive it?
+              .form-check
+                input#scopePending.form-check-input(type='radio' name='scope' value='pending' checked)
+                label.form-check-label(for='scopePending') Only guests who haven't received it yet (includes failed)
+              .form-check.mb-3
+                input#scopeAll.form-check-input(type='radio' name='scope' value='all')
+                label.form-check-label(for='scopeAll') Everyone, even if already sent (resend)
+              .form-check.mb-3#selectedOnlyWrap.d-none
+                input#selectedOnly.form-check-input(type='checkbox')
+                label.form-check-label(for='selectedOnly') Only the <span id="selectedCount">0</span> guests I ticked in the table
+              .small.text-muted#creditsInfo Checking your credits…
+            .modal-footer
+              button.btn.btn-light(type='button' data-bs-dismiss='modal') Cancel
+              button.btn.btn-success(type='submit')
+                span.spinner-border.spinner-border-sm.me-2.d-none
+                | Send now
+
+    //- ---------- Thank-you message modal ----------
+    .modal.fade#thankYouModal(tabindex='-1' aria-hidden='true')
+      .modal-dialog.modal-dialog-centered
+        .modal-content
+          form#thankYouForm(novalidate)
+            .modal-header
+              h2.modal-title.h5 Send a thank-you message
+              button.btn-close(type='button' data-bs-dismiss='modal' aria-label='Close')
+            .modal-body
+              if smsProvider === 'log' || waProvider === 'log'
+                .alert.alert-warning.small
+                  i.bi.bi-exclamation-triangle.me-1
+                  | Test mode: #{[smsProvider === 'log' ? 'SMS' : null, waProvider === 'log' ? 'WhatsApp' : null].filter(Boolean).join(' and ')} messages are only printed to the server log, not delivered.
+              .alert.alert-info.small
+                | Only guests who checked in will receive this message. WhatsApp delivery is subject to your provider's opt-in and approved-template rules.
+              .alert.alert-danger.d-none#thankYouError
+              label.form-label.d-block.fw-semibold(for='thankYouMessage') Your message
+              textarea#thankYouMessage.form-control(name='message' rows='5' maxlength='1000' required) Thank you for celebrating {{event}} with us. We truly appreciate you being there!
+              .form-text Use {{name}} to address each guest by name and {{event}} to include the event name.
+              label.form-label.d-block.fw-semibold.mt-4 How should it be sent?
+              .delivery-options.mb-3
+                input#thankYouSms.btn-check(type='radio' name='channel' value='SMS')
+                label.delivery-option(for='thankYouSms')
+                  i.bi.bi-chat-dots
+                  strong SMS
+                  small Send a text message
+                input#thankYouWa.btn-check(type='radio' name='channel' value='WHATSAPP' checked)
+                label.delivery-option(for='thankYouWa')
+                  i.bi.bi-whatsapp
+                  strong WhatsApp
+                  small Send a WhatsApp text message
+                input#thankYouBoth.btn-check(type='radio' name='channel' value='BOTH')
+                label.delivery-option(for='thankYouBoth')
+                  i.bi.bi-send-check
+                  strong Both
+                  small Send through SMS and WhatsApp
+              .small.text-muted#thankYouCreditsInfo Checking your credits…
+            .modal-footer
+              button.btn.btn-light(type='button' data-bs-dismiss='modal') Cancel
+              button.btn.btn-success(type='submit')
+                span.spinner-border.spinner-border-sm.me-2.d-none
+                | Send thank-you
+
+    //- ---------- Card preview modal ----------
+    .modal.fade#cardModal(tabindex='-1' aria-hidden='true')
+      .modal-dialog.modal-dialog-centered
+        .modal-content
+          .modal-header
+            h2.modal-title.h6#cardModalTitle Card preview
+            button.btn-close(type='button' data-bs-dismiss='modal' aria-label='Close')
+          .modal-body.text-center
+            img#cardModalImg.img-fluid.rounded.shadow-sm(alt='Generated invitation card')
+          .modal-footer
+            a.btn.btn-outline-primary#cardModalDownload(href='#' download)
+              i.bi.bi-download.me-1
+              |  Download

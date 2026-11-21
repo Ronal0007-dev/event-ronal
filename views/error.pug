@@ -1,0 +1,9 @@
+extends layout
+
+block content
+  .frame
+    .error-wrap
+      span.eyebrow.ember Something is off
+      h1.mt-3= title
+      p.muted.mb-4(style='max-width:30rem')= message
+      div: a.btn.btn-primary(href='/') Back to start

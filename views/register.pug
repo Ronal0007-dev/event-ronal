@@ -1,0 +1,36 @@
+extends layout
+
+block content
+  .frame
+    .auth-split
+      .auth-aside
+        span.eyebrow.ember New account
+        h1 Start with #[em one event.]
+        p It takes a minute to set up. You can send a test to your own phone before anyone else sees a card.
+        img(src='/img/showcase/engagement.jpg' alt='Sample engagement invitation card' width='600' height='833')
+      .auth-panel
+        h2 Create your account
+        p.sub Free to start.
+        if error
+          .alert.alert-danger(role='alert')= error
+        form(method='post' action='/register' novalidate)
+          .mb-4
+            label.form-label(for='fullName') Full name
+            input#fullName.form-control(type='text' name='fullName' value=form.fullName required autocomplete='name')
+          .mb-4
+            label.form-label(for='email') Email
+            input#email.form-control(type='email' name='email' value=form.email required autocomplete='email')
+          .mb-4
+            label.form-label(for='phone') Phone #[span.text-muted (optional)]
+            input#phone.form-control(type='tel' name='phone' value=form.phone placeholder='0712 345 678' autocomplete='tel')
+          .mb-4
+            label.form-label(for='password') Password
+            .password-input-wrap
+              input#password.form-control(type='password' name='password' minlength='8' required autocomplete='new-password')
+              button.password-toggle(type='button' aria-label='Show password' aria-pressed='false' data-password-toggle)
+                i.bi.bi-eye(aria-hidden='true')
+            .form-text At least 8 characters
+          button.btn.btn-primary.btn-lg.w-100(type='submit') Create account
+        p.mt-4.mb-0.muted
+          | Already registered? 
+          a(href='/login') Sign in

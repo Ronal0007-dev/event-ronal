@@ -1,0 +1,22 @@
+extends layout
+
+block content
+  .public-wrap
+    .public-card.text-center
+      if valid
+        i.bi.bi-patch-check-fill.text-success.display-3
+        h1.h4.fw-bold.mt-2 Valid invitation
+        p.text-muted.mb-3 This card is registered for:
+        .fs-4.fw-bold= guestName
+        .badge.text-bg-primary.mb-3= cardType + ' card'
+        p.mb-1.fw-semibold= eventName
+        p.text-muted.small.mb-1= when
+        p.text-muted.small= venue
+        hr
+        p.small.text-muted.mb-0 Entry is confirmed by the event staff scanning this QR code at the gate.
+        if scannerLink
+          a.btn.btn-primary.mt-3(href=scannerLink) Open gate scanner
+      else
+        i.bi.bi-x-octagon-fill.text-danger.display-3
+        h1.h4.fw-bold.mt-2 Invalid ticket
+        p.text-muted.mb-0 This code does not match any invitation in our system.

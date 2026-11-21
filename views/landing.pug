@@ -1,0 +1,201 @@
+extends layout
+
+block content
+  //- ---------------- Hero ----------------
+  section.hero
+    .frame
+      .hero-grid
+        .hero-copy(data-reveal)
+          span.eyebrow.ember A personal QR card for every guest
+          h1 Send every guest their own card. #[em Scan it at the door.]
+          p.hero-lede
+            | Pick an occasion, choose your colour, add the guest list. Each person gets a card with their name and a QR code, delivered on WhatsApp or by SMS. On the day, your phone camera is the guest list.
+          .hero-cta
+            if isLoggedIn
+              a.btn.btn-primary.btn-lg(href='/dashboard') Go to your events
+            else
+              a.btn.btn-primary.btn-lg(href='/register') Create your first event
+              a.btn-link-quiet(href='#how') See how it works
+          p.hero-note Kiswahili or English messages &middot; single and double cards &middot; works with any phone camera
+
+        .hero-stack(data-reveal aria-hidden='false')
+          img.c2(src='/img/showcase/birthday.jpg' alt='Sample birthday invitation card in vermilion with confetti' width='600' height='833')
+          img.c3(src='/img/showcase/graduation.jpg' alt='Sample graduation party card in forest green with a mortarboard' width='600' height='833')
+          img.c1(src='/img/showcase/wedding.jpg' alt='Sample wedding invitation card with an arch and a QR code' width='600' height='833')
+          .scan-chip
+            i.bi.bi-check-circle-fill
+            div
+              b VALID — ADMIT 2
+              span Mama Zawadi &middot; Double card
+
+  hr.rule
+
+  //- ---------------- How it works ----------------
+  section.section#how
+    .frame
+      .section-head(data-reveal)
+        div.section-title
+          span.section-label 01 / A simpler way to host
+          h2 From guest list to gate, in four clear steps.
+        p Nothing to print and no one squinting at a paper list on the day. Create, send and check in from one place.
+      .steps
+        .step(data-reveal)
+          .num 1
+          h3 Choose the occasion and a colour
+          p Ten occasions, from harusi to mahafali. Pick a design and a colour, and the whole card is tinted to match. Or upload your own background.
+        .step(data-reveal)
+          .num 2
+          h3 Add your guests
+          p Type them in, or upload a CSV or Excel file. Numbers like 0712 345 678 are tidied up automatically, and each guest is marked Single or Double.
+        .step(data-reveal)
+          .num 3
+          h3 Send the cards
+          p WhatsApp, SMS or both. You can see sent and failed for every guest, and resend only the ones that failed.
+        .step(data-reveal)
+          .num 4
+          h3 Scan at the gate
+          p Green means come in. Amber means this card was already used, and shows when. Red means the code is not ours.
+
+  //- ---------------- Occasions ----------------
+  section#occasions(style='padding-bottom:0')
+    .frame
+      .section-head(data-reveal style='margin-bottom:2.5rem')
+        div.section-title
+          span.section-label 02 / Made for your moment
+          h2 Ten occasions. Your colour.
+        p Every design redraws itself in the colour you pick. These are samples; yours will carry your names and date.
+    .strip(role='list')
+      each c in categories
+        a(href=isLoggedIn ? '/dashboard' : '/register' role='listitem' data-reveal)
+          img(src=`/img/showcase/${c.key}.jpg` alt=`Sample ${c.label.toLowerCase()} invitation card` loading='lazy' width='600' height='833')
+          span.cap
+            b= c.label
+            small= c.sw
+
+  hr.rule
+
+  //- ---------------- About ----------------
+  section.section#about.about-section
+    .frame
+      .about-panel(data-reveal)
+        .about-copy
+          span.section-label 03 / About Event Invite
+          h2 The details matter. The guest list shouldn’t be hard.
+          p Event Invite brings invitations and check-in together, so hosts can spend less time managing lists and more time being part of the day.
+        .about-points
+          article.about-point(data-reveal)
+            span.about-point-icon: i.bi.bi-person-vcard(aria-hidden='true')
+            h3 A card for each guest
+            p Personal invitations with a unique QR code make every ticket easy to identify.
+          article.about-point(data-reveal)
+            span.about-point-icon: i.bi.bi-phone(aria-hidden='true')
+            h3 Simple to send and scan
+            p Deliver by WhatsApp or SMS, then check guests in with a phone camera.
+
+  hr.rule
+
+  //- ---------------- Delivery & gate ----------------
+  section.section#delivery
+    .frame
+      .split
+        .split-copy(data-reveal)
+          span.section-label 03 / Delivery and entry
+          h2.mt-3 Two ways to arrive. One way in.
+          p.muted Guests receive invitations where they already read messages. At the gate, your team gets a clear answer in a second.
+          ul.facts
+            li
+              span.fact-icon: i.bi.bi-whatsapp(aria-hidden='true')
+              div
+                b WhatsApp
+                p The card image itself, with a short caption in Kiswahili or English.
+            li
+              span.fact-icon: i.bi.bi-chat-left-text(aria-hidden='true')
+              div
+                b SMS
+                p A short message with the event details and a link to view and download the card.
+            li
+              span.fact-icon: i.bi.bi-send(aria-hidden='true')
+              div
+                b Both
+                p Sent together. Each channel keeps its own status for every guest.
+            li
+              span.fact-icon: i.bi.bi-qr-code-scan(aria-hidden='true')
+              div
+                b At the gate
+                p A card can be admitted once, even if two phones scan it at the same moment.
+        .gate-demo(data-reveal aria-label='Examples of what the gate scanner shows')
+          .gate-demo-head
+            span.section-label Live check-in
+            span.gate-demo-status
+              i.bi.bi-circle-fill(aria-hidden='true')
+              | Scanner ready
+          .gate-card.ok
+            i.bi.bi-check-circle-fill
+            .gate-result
+              .t VALID — ADMIT
+              .g Mama Zawadi
+              small Double card · admits 2
+          .gate-card.warn
+            i.bi.bi-exclamation-triangle-fill
+            .gate-result
+              .t ALREADY SCANNED
+              .g Baraka Mwita
+              small First scanned at 14:51:01
+          .gate-card.bad
+            i.bi.bi-x-octagon-fill
+            .gate-result
+              .t INVALID TICKET
+              .g This code does not match any invitation.
+
+  //- ---------------- Contact ----------------
+  section.section#contact.contact-section
+    .frame
+      .contact-layout
+        .contact-intro(data-reveal)
+          span.section-label 04 / Get in touch
+          h2 Have a question?
+          p.muted Tell us what you’d like to know about setting up an event, sending invitations or checking in guests.
+          .contact-note#contactNotice
+            i.bi.bi-info-circle(aria-hidden='true')
+            span This form is a preview and is not connected to message delivery yet.
+        form.contact-form(data-reveal aria-label='Contact form preview' aria-describedby='contactNotice')
+          .contact-fields
+            .contact-field
+              label.form-label(for='contactName') Your name
+              input#contactName.form-control(type='text' name='name' autocomplete='name' placeholder='e.g. Amina Juma')
+            .contact-field
+              label.form-label(for='contactEmail') Email address
+              input#contactEmail.form-control(type='email' name='email' autocomplete='email' placeholder='you@example.com')
+            .contact-field.contact-field-wide
+              label.form-label(for='contactSubject') What can we help with?
+              select#contactSubject.form-select(name='subject')
+                option(value='' selected) Choose a topic
+                option(value='getting-started') Getting started
+                option(value='invitations') Invitations and delivery
+                option(value='check-in') Guest check-in
+                option(value='other') Something else
+            .contact-field.contact-field-wide
+              label.form-label(for='contactMessage') Your message
+              textarea#contactMessage.form-control(name='message' rows='4' placeholder='Write your question here…')
+          .contact-submit
+            span.small.text-muted Contact submissions are not enabled yet.
+            button.btn.btn-primary(type='button' disabled) Send message
+
+  //- ---------------- Closing ----------------
+  section.closing
+    .frame
+      h2 Planning something? #[em Start with the guest list.]
+      .mt-4
+        if isLoggedIn
+          a.btn.btn-primary.btn-lg(href='/dashboard') Go to your events
+        else
+          a.btn.btn-primary.btn-lg(href='/register') Create an account
+  footer.site-foot
+    .frame.d-flex.flex-wrap.justify-content-between.gap-2
+      span &copy; #{new Date().getFullYear()} Event Invite
+      span
+        a(href='/login') Sign in
+        |  &middot; 
+        a(href='/register') Sign up
+        |  &middot; 
+        a(href='#contact') Contact

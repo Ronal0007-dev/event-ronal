@@ -1,0 +1,39 @@
+extends layout
+
+block content
+  #scannerPage.scanner-page(data-event-id=event.id)
+    header.scanner-head
+      a.btn.btn-sm.btn-outline-light(href=`/events/${event.id}`): i.bi.bi-arrow-left
+      .scanner-title
+        .fw-bold.text-truncate= event.eventName
+        small.text-white-50.text-truncate= event.when
+      .scanner-counter
+        .big #[span#cntAttended 0]#[small /#[span#cntTotal 0]]
+        small guests in
+    .scanner-body
+      #reader
+      .scanner-hint#scannerHint Point the camera at a guest's QR code
+      .scanner-actions
+        button.btn.btn-light#btnFlip(type='button')
+          i.bi.bi-camera.me-1
+          |  Switch camera
+        button.btn.btn-outline-light#btnManual(type='button')
+          i.bi.bi-keyboard.me-1
+          |  Enter code
+    //- Manual entry (camera denied / damaged card)
+    #manualBox.manual-box.d-none
+      form#manualForm.d-flex.gap-2
+        input#manualToken.form-control(type='text' placeholder='Paste ticket link or code' autocomplete='off')
+        button.btn.btn-primary(type='submit') Check
+    //- Result overlay
+    #resultOverlay.result-overlay.d-none(role='alert' aria-live='assertive')
+      .result-card
+        i#resultIcon.bi
+        h2#resultTitle
+        .result-guest#resultGuest
+        .result-meta#resultMeta
+        button.btn.btn-lg.btn-light.mt-3.w-100#btnNext(type='button') Scan next
+        button.btn.btn-sm.btn-link.text-white.mt-2.d-none#btnUndo(type='button') Wrong person? Undo check-in
+
+block scripts
+  script(src='/vendor/html5-qrcode/html5-qrcode.min.js')

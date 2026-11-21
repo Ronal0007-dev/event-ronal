@@ -1,0 +1,28 @@
+extends layout
+
+block content
+  .admin-confirm-wrap
+    .admin-confirm-card.admin-delete-card
+      a.admin-wordmark(href='/admin') Event Invite #[span Admin]
+      span.section-kicker Confirm event deletion
+      h1= event.eventName
+      p You are about to permanently delete this event and its related guest records.
+      dl.admin-delete-details
+        dt Account
+        dd #{event.ownerName} · #{event.ownerEmail}
+        dt Occasion
+        dd= event.category
+        dt Event date
+        dd= event.eventDate
+        dt Venue
+        dd= event.venue
+        dt Guests
+        dd= event.guests
+        dt Generated cards
+        dd= event.cards
+      .alert.alert-warning(role='alert') This action cannot be undone. Generated invitation files and the event’s uploaded background will also be removed.
+      .admin-delete-actions
+        a.btn.btn-outline-secondary(href=`/admin?page=${page}`) Cancel
+        form(method='post' action=`/admin/events/${event.id}/delete`)
+          input(type='hidden' name='page' value=page)
+          button.btn.btn-danger(type='submit') Permanently delete event

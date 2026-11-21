@@ -1,0 +1,41 @@
+extends layout
+
+block content
+  .frame
+    .auth-split
+      .auth-aside
+        if adminMode
+          span.eyebrow.ember Administrator access
+          h1 Keep every event #[em in view.]
+          p Review accounts, events, guest lists and invitation activity from one place.
+        else
+          span.eyebrow.ember Welcome back
+          h1 Your guests are #[em waiting.]
+          p Pick up where you left off: the guest list, the cards, the gate.
+        img(src='/img/showcase/anniversary.jpg' alt='Sample anniversary invitation card' width='600' height='833')
+      .auth-panel
+        h2= adminMode ? 'Administrator sign in' : 'Sign in'
+        p.sub= adminMode ? 'Use your administrator account credentials.' : 'Use the email you registered with.'
+        if success
+          .alert.alert-success(role='status')= success
+        if error
+          .alert.alert-danger(role='alert')= error
+        form(method='post' action=adminMode ? '/admin/login' : '/login' novalidate)
+          .mb-4
+            label.form-label(for='email')= adminMode ? 'Administrator email' : 'Email'
+            input#email.form-control(type='email' name='email' value=email required autofocus autocomplete='email')
+          .mb-4
+            label.form-label(for='password') Password
+            .password-input-wrap
+              input#password.form-control(type='password' name='password' required autocomplete='current-password')
+              button.password-toggle(type='button' aria-label='Show password' aria-pressed='false' data-password-toggle)
+                i.bi.bi-eye(aria-hidden='true')
+          button.btn.btn-primary.btn-lg.w-100(type='submit')= adminMode ? 'Sign in to admin' : 'Sign in'
+        if adminMode
+          p.mt-4.mb-0.muted
+            a(href='/') Back to Event Invite
+        else
+          p.mt-4.mb-0.muted
+            | No account yet? 
+            a(href='/register') Sign up
+          p.mt-2.mb-0: a(href='/forgot-password') Forgot your password?
