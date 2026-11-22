@@ -3,7 +3,7 @@ extends layout
 block content
   #scannerPage.scanner-page(data-event-id=event.id)
     header.scanner-head
-      a.btn.btn-sm.btn-outline-light(href=`/events/${event.id}`): i.bi.bi-arrow-left
+      a.btn.btn-sm.btn-outline-light(href=adminMode ? `/admin/events/${event.id}/manage` : `/events/${event.id}`): i.bi.bi-arrow-left
       .scanner-title
         .fw-bold.text-truncate= event.eventName
         small.text-white-50.text-truncate= event.when

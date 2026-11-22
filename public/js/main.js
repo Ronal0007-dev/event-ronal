@@ -409,7 +409,7 @@
       $('#selectedCount').textContent = n;
       $('#selectedOnly').checked = n > 0;
       try {
-        const c = await api('/api/credits');
+        const c = await api(`${base}/credits`);
         $('#creditsInfo').innerHTML = `Your balance: <strong>${c.smsCredits}</strong> SMS credits · <strong>${c.whatsappCredits}</strong> WhatsApp credits. One credit is used per message delivered.`;
       } catch (_) {
         $('#creditsInfo').textContent = '';
@@ -441,7 +441,7 @@
     thankYouModalEl.addEventListener('show.bs.modal', async () => {
       showError($('#thankYouError'), '');
       try {
-        const c = await api('/api/credits');
+        const c = await api(`${base}/credits`);
         $('#thankYouCreditsInfo').innerHTML = `Your balance: <strong>${c.smsCredits}</strong> SMS credits · <strong>${c.whatsappCredits}</strong> WhatsApp credits. One credit is used per message delivered.`;
       } catch (_) {
         $('#thankYouCreditsInfo').textContent = '';
@@ -472,6 +472,52 @@
         setBusy(thankYouForm, false);
       }
     });
+
+    /* ---- edit and delete event ---- */
+    const editEventForm = $('#editEventForm');
+    editEventForm.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const error = $('#editEventError');
+      showError(error, '');
+      if (!editEventForm.checkValidity()) {
+        editEventForm.reportValidity();
+        return;
+      }
+      const formData = new FormData(editEventForm);
+      setBusy(editEventForm, true);
+      try {
+        const result = await api(base, {
+          method: 'PATCH',
+          body: {
+            eventName: formData.get('eventName'),
+            eventDate: formData.get('eventDate'),
+            venue: formData.get('venue'),
+            mapsLink: formData.get('mapsLink'),
+            templateId: formData.get('templateId'),
+          },
+        });
+        toast(result.message);
+        window.location.reload();
+      } catch (e) {
+        showError(error, e.message);
+        setBusy(editEventForm, false);
+      }
+    });
+
+    const deleteEventButton = $('#btnDeleteEvent');
+    if (deleteEventButton) {
+      deleteEventButton.addEventListener('click', async () => {
+        if (!window.confirm('Delete this event, all guest records, delivery history and generated cards? This cannot be undone.')) return;
+        deleteEventButton.disabled = true;
+        try {
+          const result = await api(base, { method: 'DELETE' });
+          window.location.href = result.redirect;
+        } catch (e) {
+          deleteEventButton.disabled = false;
+          toast(e.message, 'danger');
+        }
+      });
+    }
 
     /* ---- card colour (re-creates every card) ---- */
     const colourBar = $('#colourBar');

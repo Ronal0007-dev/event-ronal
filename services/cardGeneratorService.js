@@ -189,14 +189,16 @@ async function generateCard({ guest, event, template }) {
   const overlay = Buffer.from(buildOverlaySvg({ guest, event, layout, isCustomBackground: isCustom }));
 
   await fs.mkdir(OUTPUT_DIR, { recursive: true });
-  const fileName = `${event.id}-${guest.qrToken}.jpg`;
+  const fileName = `${event.id}-${guest.qrToken}-v2.jpg`;
   const outPath = path.join(OUTPUT_DIR, fileName);
 
+  const composites = [
+    { input: overlay, top: 0, left: 0 },
+    { input: qrBuffer, top: layout.qrPositionY, left: layout.qrPositionX },
+  ];
+
   await sharp(background)
-    .composite([
-      { input: overlay, top: 0, left: 0 },
-      { input: qrBuffer, top: layout.qrPositionY, left: layout.qrPositionX },
-    ])
+    .composite(composites)
     .jpeg({ quality: 90, mozjpeg: true })
     .toFile(outPath);
 

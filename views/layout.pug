@@ -20,11 +20,16 @@ html(lang='en')
             ul.nav-links
               li: a(href='#how') How it works
               li: a(href='#occasions') Occasions
+              li: a(href='#packages') Packages
               li: a(href='#about') About
               li: a(href='#delivery') Delivery &amp; gate
               li: a(href='#contact') Contact
           .nav-end
-            if currentUserId
+            if adminAuthenticated
+              a.nav-user(href='/admin') Admin console
+              form(method='post' action='/admin/logout' style='margin:0')
+                button.nav-signout(type='submit') Sign out
+            else if currentUserId
               a.nav-user(href='/dashboard') Dashboard
               form(method='post' action='/logout' style='margin:0')
                 button.nav-signout(type='submit') Sign out

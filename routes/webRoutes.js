@@ -1,7 +1,7 @@
 'use strict';
 const express = require('express');
 const rateLimit = require('express-rate-limit');
-const { requireAuth, redirectIfAuthed, loadOwnedEvent } = require('../middleware/auth');
+const { requireAuth, requireUserOrAdmin, redirectIfAuthed, loadAccessibleEvent } = require('../middleware/auth');
 const auth = require('../controllers/authController');
 const admin = require('../controllers/adminController');
 const { requireAdmin, redirectIfAdmin } = require('../middleware/adminAuth');
@@ -79,13 +79,14 @@ router.get('/admin/login', redirectIfAdmin, admin.showLogin);
 router.post('/admin/login', redirectIfAdmin, adminLoginLimiter, admin.login);
 router.post('/admin/logout', requireAdmin, admin.logout);
 router.get('/admin', requireAdmin, admin.dashboard);
+router.get('/admin/events/:eventId/manage', requireAdmin, loadAccessibleEvent, events.showEvent);
 router.get('/admin/events/:eventId/delete', requireAdmin, admin.confirmEventDeletion);
 router.post('/admin/events/:eventId/delete', requireAdmin, admin.deleteEvent);
 
 // Organiser pages
 router.get('/dashboard', requireAuth, events.dashboard);
-router.get('/events/:id', requireAuth, loadOwnedEvent, events.showEvent);
-router.get('/scanner/:eventId', requireAuth, loadOwnedEvent, events.showScanner);
+router.get('/events/:id', requireAuth, loadAccessibleEvent, events.showEvent);
+router.get('/scanner/:eventId', requireUserOrAdmin, loadAccessibleEvent, events.showScanner);
 
 // Public pages (linked from QR codes / SMS)
 router.get('/verify-checkin/:token', checkin.publicVerifyPage);

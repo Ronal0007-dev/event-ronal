@@ -1,38 +1,40 @@
 'use strict';
 const express = require('express');
 const rateLimit = require('express-rate-limit');
-const { requireAuth, loadOwnedEvent } = require('../middleware/auth');
+const { requireAuth, requireUserOrAdmin, loadAccessibleEvent } = require('../middleware/auth');
 const { backgroundUpload, guestListUpload } = require('../middleware/upload');
 const events = require('../controllers/eventController');
 const guests = require('../controllers/guestController');
 const checkin = require('../controllers/checkinController');
 
 const router = express.Router();
-router.use(requireAuth);
+router.use(requireUserOrAdmin);
 
 // Scanning can be rapid at a busy gate, so this limit is generous
 const scanLimiter = rateLimit({ windowMs: 60 * 1000, limit: 240, standardHeaders: 'draft-7', legacyHeaders: false, message: { ok: false, result: 'ERROR', message: 'Too many scans, slow down a little.' } });
 
 // Templates & events
-router.get('/templates', events.listTemplates);
-router.post('/events', backgroundUpload.single('customBackground'), events.createEvent);
-router.delete('/events/:id', loadOwnedEvent, events.deleteEvent);
-router.patch('/events/:id/appearance', loadOwnedEvent, events.updateAppearance);
-router.get('/events/:id/stats', loadOwnedEvent, events.stats);
+router.get('/templates', requireAuth, events.listTemplates);
+router.post('/events', requireAuth, backgroundUpload.single('customBackground'), events.createEvent);
+router.patch('/events/:id', loadAccessibleEvent, events.updateEvent);
+router.delete('/events/:id', loadAccessibleEvent, events.deleteEvent);
+router.patch('/events/:id/appearance', loadAccessibleEvent, events.updateAppearance);
+router.get('/events/:id/stats', loadAccessibleEvent, events.stats);
 
 // Guests
-router.get('/events/:id/guests', loadOwnedEvent, guests.list);
-router.post('/events/:id/guests', loadOwnedEvent, guests.add);
-router.post('/events/:id/guests/bulk', loadOwnedEvent, guestListUpload.single('file'), guests.bulkUpload);
-router.get('/events/:id/guests/export', loadOwnedEvent, guests.exportCsv);
-router.delete('/events/:id/guests/:guestId', loadOwnedEvent, guests.remove);
+router.get('/events/:id/guests', loadAccessibleEvent, guests.list);
+router.post('/events/:id/guests', loadAccessibleEvent, guests.add);
+router.post('/events/:id/guests/bulk', loadAccessibleEvent, guestListUpload.single('file'), guests.bulkUpload);
+router.get('/events/:id/guests/export', loadAccessibleEvent, guests.exportCsv);
+router.delete('/events/:id/guests/:guestId', loadAccessibleEvent, guests.remove);
 
 // Cards & delivery
-router.post('/events/:id/generate-cards', loadOwnedEvent, guests.generateCards);
-router.post('/events/:id/send', loadOwnedEvent, guests.sendInvitations);
-router.post('/events/:id/thank-you', loadOwnedEvent, guests.sendThankYou);
-router.get('/events/:id/delivery-logs', loadOwnedEvent, guests.deliveryLogs);
-router.get('/credits', guests.credits);
+router.post('/events/:id/generate-cards', loadAccessibleEvent, guests.generateCards);
+router.post('/events/:id/send', loadAccessibleEvent, guests.sendInvitations);
+router.post('/events/:id/thank-you', loadAccessibleEvent, guests.sendThankYou);
+router.get('/events/:id/credits', loadAccessibleEvent, guests.eventCredits);
+router.get('/events/:id/delivery-logs', loadAccessibleEvent, guests.deliveryLogs);
+router.get('/credits', requireAuth, guests.credits);
 
 // Gate check-in
 router.post('/checkin/verify', scanLimiter, checkin.verify);

@@ -4,11 +4,11 @@ const path = require('path');
 const sharp = require('sharp');
 const { Op, fn, col } = require('sequelize');
 const { User, CardTemplate, Event, Guest } = require('../models');
-const { parseLocalEat, formatDateTime } = require('../utils/format');
+const { parseLocalEat, formatDateTime, formatLocalEatInput } = require('../utils/format');
 const { appUrl } = require('../services/cardGeneratorService');
-const { deleteEvent: removeEvent } = require('../services/eventDeletionService');
+const { deleteEvent: removeEvent, removeCustomBackground } = require('../services/eventDeletionService');
 const { BY_KEY, CATEGORY_COLORS, SWATCHES, HEX_RE, renderDesign } = require('../services/templateDesigns');
-const { startCardJob } = require('./guestController');
+const { startCardJob, isEventBusy } = require('./guestController');
 
 const CATEGORY_META = {
   birthday: { label: 'Birthday', sw: 'Siku ya kuzaliwa', blurb: 'Parties, milestones, first birthdays' },
@@ -154,22 +154,45 @@ exports.createEvent = async (req, res) => {
 
 exports.showEvent = async (req, res) => {
   const event = req.event;
-  const user = await User.findByPk(req.session.userId);
+  startCardJob(event, false);
+  const [user, templates] = await Promise.all([
+    User.findByPk(event.userId),
+    CardTemplate.findAll({
+      where: { category: event.category },
+      order: [['id', 'ASC']],
+      attributes: ['id', 'name', 'designKey', 'backgroundImageUrl'],
+    }),
+  ]);
+  if (!user) {
+    return res.status(404).render('error', { title: 'Not found', message: 'The event owner account could not be found.' });
+  }
   res.render('event-details', {
     title: event.eventName,
     user,
+    adminMode: Boolean(req.session?.adminAuthenticated),
     event: {
       id: event.id,
       eventName: event.eventName,
       category: event.category,
       meta: CATEGORY_META[event.category],
       when: formatDateTime(event.eventDate),
+      eventDateInput: formatLocalEatInput(event.eventDate),
       venue: event.venue,
       mapsLink: event.mapsLink,
       accentColor: event.accentColor,
+      templateId: event.templateId,
       usesCustomBackground: Boolean(event.customBackgroundUrl),
       background: event.customBackgroundUrl || event.template?.backgroundImageUrl || null,
     },
+    templates: templates.map((template, index) => ({
+      id: template.id,
+      name: template.name,
+      previewUrl: template.designKey
+        ? `/template-preview/${template.designKey}?color=${encodeURIComponent(event.accentColor)}`
+        : template.backgroundImageUrl,
+      selected: template.id === event.templateId || (!event.templateId && index === 0),
+    })),
+    owner: req.session?.adminAuthenticated ? { fullName: user.fullName, email: user.email } : null,
     swatches: SWATCHES,
     smsProvider: (process.env.SMS_PROVIDER || 'log').toLowerCase(),
     waProvider: (process.env.WHATSAPP_PROVIDER || 'log').toLowerCase(),
@@ -182,6 +205,7 @@ exports.showScanner = (req, res) => {
   res.render('scanner', {
     title: `Scanner · ${event.eventName}`,
     layoutMode: 'bare',
+    adminMode: Boolean(req.session?.adminAuthenticated),
     event: { id: event.id, eventName: event.eventName, when: formatDateTime(event.eventDate), venue: event.venue },
   });
 };
@@ -220,12 +244,81 @@ exports.stats = async (req, res) => {
 };
 
 exports.deleteEvent = async (req, res) => {
+  if (isEventBusy(req.event.id)) {
+    return res.status(409).json({ ok: false, message: 'Wait for the current card or message job to finish before deleting this event.' });
+  }
   await removeEvent(req.event);
-  res.json({ ok: true, redirect: '/dashboard' });
+  res.json({ ok: true, redirect: req.session?.adminAuthenticated ? '/admin' : '/dashboard' });
+};
+
+exports.updateEvent = async (req, res) => {
+  if (isEventBusy(req.event.id)) {
+    return res.status(409).json({ ok: false, message: 'Wait for the current card or message job to finish before editing this event.' });
+  }
+  const body = req.body || {};
+  const eventName = String(body.eventName || '').trim();
+  const venue = String(body.venue || '').trim();
+  const mapsLink = String(body.mapsLink || '').trim();
+  const templateChoice = String(body.templateId || '');
+  const eventDateValue = String(body.eventDate || '');
+  const eventDate = parseLocalEat(eventDateValue);
+  const validDateFormat = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(eventDateValue);
+  if (eventName.length < 3 || eventName.length > 160) {
+    return res.status(422).json({ ok: false, message: 'Event name must be 3–160 characters.' });
+  }
+  if (!validDateFormat || !eventDate || formatLocalEatInput(eventDate) !== eventDateValue) {
+    return res.status(422).json({ ok: false, message: 'Please provide a valid event date and time.' });
+  }
+  if (venue.length < 2 || venue.length > 255) {
+    return res.status(422).json({ ok: false, message: 'Venue must be 2–255 characters.' });
+  }
+  if (mapsLink.length > 500 || (mapsLink && !/^https?:\/\/\S+$/i.test(mapsLink))) {
+    return res.status(422).json({ ok: false, message: 'The map link must be a valid HTTP or HTTPS URL no longer than 500 characters.' });
+  }
+  const keepCustomBackground = templateChoice === 'custom';
+  let template = null;
+  if (keepCustomBackground) {
+    if (!req.event.customBackgroundUrl) {
+      return res.status(422).json({ ok: false, message: 'This event no longer has an uploaded background to keep.' });
+    }
+    template = req.event.templateId
+      ? await CardTemplate.findOne({ where: { id: req.event.templateId, category: req.event.category } })
+      : null;
+  } else {
+    const templateId = Number(templateChoice);
+    if (!Number.isInteger(templateId) || templateId < 1) {
+      return res.status(422).json({ ok: false, message: 'Choose a card template for this event.' });
+    }
+    template = await CardTemplate.findOne({ where: { id: templateId, category: req.event.category } });
+    if (!template) return res.status(422).json({ ok: false, message: 'Choose a valid card template for this event category.' });
+  }
+
+  const oldBackgroundUrl = req.event.customBackgroundUrl;
+  await req.event.update({
+    eventName,
+    eventDate,
+    venue,
+    mapsLink: mapsLink || null,
+    templateId: template?.id || null,
+    customBackgroundUrl: keepCustomBackground ? oldBackgroundUrl : null,
+  });
+  req.event.template = template;
+  if (oldBackgroundUrl && !keepCustomBackground) {
+    try {
+      await removeCustomBackground(oldBackgroundUrl);
+    } catch (error) {
+      console.error('[events] replaced custom background cleanup failed:', error.message);
+    }
+  }
+  startCardJob(req.event, true);
+  return res.json({ ok: true, message: 'Event details updated. Re-creating guest cards…' });
 };
 
 /** PATCH /api/events/:id/appearance — change the card colour and re-render every card. */
 exports.updateAppearance = async (req, res) => {
+  if (isEventBusy(req.event.id)) {
+    return res.status(409).json({ ok: false, message: 'Wait for the current card or message job to finish before changing the appearance.' });
+  }
   const accentColor = String(req.body.accentColor || '').trim().toLowerCase();
   if (!HEX_RE.test(accentColor)) return res.status(422).json({ ok: false, message: 'Pick a valid card colour.' });
   if (req.event.customBackgroundUrl) {

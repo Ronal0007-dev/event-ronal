@@ -74,12 +74,92 @@ block content
 
   hr.rule
 
+  //- ---------------- Packages ----------------
+  section.section#packages.packages-section
+    .frame
+      .section-head(data-reveal)
+        div.section-title
+          span.section-label 03 / Simple packages
+          h2 The right fit for your guest list.
+        p Choose a package based on the number of invitations and event-day support you need.
+      .package-grid
+        article.package-card.package-card-popular(data-reveal)
+          .package-card-head
+            span.package-name Standard
+            p.package-price TSh 50,000/=
+            p.package-invites 50 invitations
+          ul.package-features
+            li
+              i.bi.bi-check-circle-fill(aria-hidden='true')
+              span WhatsApp invitations
+            li
+              i.bi.bi-check-circle-fill(aria-hidden='true')
+              span SMS invitations
+          a.btn.btn-outline-primary.package-cta(href=isLoggedIn ? '/dashboard' : '/register') Get started
+        article.package-card(data-reveal)
+          .package-card-head
+            span.package-name Tier 1
+            p.package-price TSh 90,000/=
+            p.package-invites 100 invitations
+          ul.package-features
+            li
+              i.bi.bi-check-circle-fill(aria-hidden='true')
+              span WhatsApp and SMS invitations
+            li
+              i.bi.bi-check-circle-fill(aria-hidden='true')
+              span QR scan gateway
+            li
+              i.bi.bi-check-circle-fill(aria-hidden='true')
+              span Thank-you SMS
+          a.btn.btn-outline-primary.package-cta(href=isLoggedIn ? '/dashboard' : '/register') Get started
+        article.package-card(data-reveal)
+          .package-card-head
+            span.package-badge Most popular
+            span.package-name Tier 2
+            p.package-price TSh 150,000/=
+            p.package-invites 200 invitations
+          ul.package-features
+            li
+              i.bi.bi-check-circle-fill(aria-hidden='true')
+              span WhatsApp and SMS invitations
+            li
+              i.bi.bi-check-circle-fill(aria-hidden='true')
+              span QR scan gateway
+            li
+              i.bi.bi-check-circle-fill(aria-hidden='true')
+              span Thank-you SMS
+            li
+              i.bi.bi-check-circle-fill(aria-hidden='true')
+              span 24/7 support
+          a.btn.btn-primary.package-cta(href=isLoggedIn ? '/dashboard' : '/register') Get started
+        article.package-card(data-reveal)
+          .package-card-head
+            span.package-name Tier 3
+            p.package-price TSh 200,000/=
+            p.package-invites 300 invitations
+          ul.package-features
+            li
+              i.bi.bi-check-circle-fill(aria-hidden='true')
+              span WhatsApp and SMS invitations
+            li
+              i.bi.bi-check-circle-fill(aria-hidden='true')
+              span QR scan gateway
+            li
+              i.bi.bi-check-circle-fill(aria-hidden='true')
+              span Thank-you SMS
+            li
+              i.bi.bi-check-circle-fill(aria-hidden='true')
+              span 24/7 support
+          a.btn.btn-outline-primary.package-cta(href=isLoggedIn ? '/dashboard' : '/register') Get started
+
+  hr.rule
+
   //- ---------------- About ----------------
   section.section#about.about-section
     .frame
       .about-panel(data-reveal)
         .about-copy
-          span.section-label 03 / About Event Invite
+          span.section-label 04 / About Event Invite
           h2 The details matter. The guest list shouldn’t be hard.
           p Event Invite brings invitations and check-in together, so hosts can spend less time managing lists and more time being part of the day.
         .about-points
@@ -99,7 +179,7 @@ block content
     .frame
       .split
         .split-copy(data-reveal)
-          span.section-label 03 / Delivery and entry
+          span.section-label 05 / Delivery and entry
           h2.mt-3 Two ways to arrive. One way in.
           p.muted Guests receive invitations where they already read messages. At the gate, your team gets a clear answer in a second.
           ul.facts
@@ -152,7 +232,7 @@ block content
     .frame
       .contact-layout
         .contact-intro(data-reveal)
-          span.section-label 04 / Get in touch
+          span.section-label 06 / Get in touch
           h2 Have a question?
           p.muted Tell us what you’d like to know about setting up an event, sending invitations or checking in guests.
           .contact-note#contactNotice

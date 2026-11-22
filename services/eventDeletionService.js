@@ -4,19 +4,20 @@ const path = require('path');
 const { Guest } = require('../models');
 const { deleteCardFile } = require('./cardGeneratorService');
 
+async function removeCustomBackground(backgroundUrl) {
+  if (!backgroundUrl?.startsWith('/uploads/')) return;
+  try {
+    await fs.unlink(path.join(__dirname, '..', 'public', 'uploads', path.basename(backgroundUrl)));
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+}
+
 async function deleteEvent(event) {
   const guests = await Guest.findAll({ where: { eventId: event.id }, attributes: ['generatedCardUrl'] });
   await Promise.all(guests.map((guest) => deleteCardFile(guest.generatedCardUrl)));
-
-  if (event.customBackgroundUrl?.startsWith('/uploads/')) {
-    try {
-      await fs.unlink(path.join(__dirname, '..', 'public', 'uploads', path.basename(event.customBackgroundUrl)));
-    } catch (_) {
-      // The upload may already have been removed.
-    }
-  }
-
+  await removeCustomBackground(event.customBackgroundUrl);
   await event.destroy();
 }
 
-module.exports = { deleteEvent };
+module.exports = { deleteEvent, removeCustomBackground };

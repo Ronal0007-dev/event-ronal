@@ -15,6 +15,7 @@ const CARD_TYPES = ['Single', 'Double'];
 /* in-memory guards so a long job is never started twice for the same event (single-process deployment) */
 const runningCardJobs = new Set();
 const runningSendJobs = new Set();
+exports.isEventBusy = (eventId) => runningCardJobs.has(eventId) || runningSendJobs.has(eventId);
 
 const newToken = () => crypto.randomUUID();
 
@@ -49,7 +50,8 @@ async function mapLimit(items, limit, worker) {
 }
 
 async function ensureCard(guest, event) {
-  if (guest.generatedCardUrl) return guest.generatedCardUrl;
+  if (guest.generatedCardUrl?.endsWith('-v2.jpg')) return guest.generatedCardUrl;
+  await deleteCardFile(guest.generatedCardUrl);
   const url = await generateCard({ guest, event, template: event.template });
   await guest.update({ generatedCardUrl: url });
   return url;
@@ -171,11 +173,13 @@ function startCardJob(event, force) {
   (async () => {
     try {
       const where = { eventId: event.id };
-      if (!force) where.generatedCardUrl = null;
+      if (!force) {
+        where[Op.or] = [{ generatedCardUrl: null }, { generatedCardUrl: { [Op.notLike]: '%-v2.jpg' } }];
+      }
       const guests = await Guest.findAll({ where });
       await mapLimit(guests, 4, async (guest) => {
         try {
-          if (force) await deleteCardFile(guest.generatedCardUrl);
+          await deleteCardFile(guest.generatedCardUrl);
           const url = await generateCard({ guest, event, template: event.template });
           await guest.update({ generatedCardUrl: url });
         } catch (err) {
@@ -266,7 +270,7 @@ exports.sendInvitations = async (req, res) => {
   if (!jobs.length) return res.json({ ok: true, queued: 0, message: 'Nothing to send — everyone has already received this invitation.' });
 
   // Pre-flight credit check so the organiser gets a clear message instead of a wall of FAILED rows
-  const user = await User.findByPk(req.session.userId);
+  const user = await User.findByPk(event.userId);
   const needSms = jobs.filter((j) => j.channel === 'SMS').length;
   const needWa = jobs.filter((j) => j.channel === 'WHATSAPP').length;
   if (needSms > user.smsCredits) return res.status(402).json({ ok: false, message: `Not enough SMS credits: need ${needSms}, you have ${user.smsCredits}.` });
@@ -282,7 +286,7 @@ exports.sendInvitations = async (req, res) => {
       const byGuest = new Map();
       jobs.forEach((j) => byGuest.set(j.guest.id, [...(byGuest.get(j.guest.id) || []), j]));
       await mapLimit([...byGuest.values()], 3, (guestJobs) =>
-        Promise.all(guestJobs.map((j) => deliver(j.channel, j.guest, event, req.session.userId).catch((e) => console.error('[send]', e.message))))
+      Promise.all(guestJobs.map((j) => deliver(j.channel, j.guest, event, event.userId).catch((e) => console.error('[send]', e.message))))
       );
     } finally {
       runningSendJobs.delete(event.id);
@@ -337,7 +341,7 @@ exports.sendThankYou = async (req, res) => {
   });
   if (!guests.length) return res.status(409).json({ ok: false, message: 'No guests have checked in to this event yet.' });
 
-  const userId = req.session.userId;
+  const userId = event.userId;
   const user = await User.findByPk(userId);
   if (!user) return res.status(401).json({ ok: false, message: 'Please sign in again.' });
   const needSms = channels.includes('SMS') ? guests.length : 0;
@@ -373,6 +377,12 @@ exports.sendThankYou = async (req, res) => {
 exports.credits = async (req, res) => {
   const user = await User.findByPk(req.session.userId, { attributes: ['smsCredits', 'whatsappCredits'] });
   res.json({ ok: true, smsCredits: user.smsCredits, whatsappCredits: user.whatsappCredits });
+};
+
+exports.eventCredits = async (req, res) => {
+  const user = await User.findByPk(req.event.userId, { attributes: ['smsCredits', 'whatsappCredits'] });
+  if (!user) return res.status(404).json({ ok: false, message: 'Event owner account not found.' });
+  return res.json({ ok: true, smsCredits: user.smsCredits, whatsappCredits: user.whatsappCredits });
 };
 
 exports.deliveryLogs = async (req, res) => {

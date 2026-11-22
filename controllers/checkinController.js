@@ -22,14 +22,16 @@ function guestPayload(guest) {
 }
 
 /**
- * POST /api/checkin/verify  { token, eventId }   (organiser session required)
+ * POST /api/checkin/verify  { token, eventId }   (organiser or admin session required)
  * Marks the guest as ATTENDED atomically: only one concurrent scan can ever win.
  */
 exports.verify = async (req, res) => {
   const eventId = Number(req.body.eventId);
   const token = extractToken(req.body.token);
 
-  const event = Number.isInteger(eventId) ? await Event.findOne({ where: { id: eventId, userId: req.session.userId } }) : null;
+  const event = Number.isInteger(eventId)
+    ? await Event.findOne({ where: req.session?.adminAuthenticated ? { id: eventId } : { id: eventId, userId: req.session.userId } })
+    : null;
   if (!event) return res.status(404).json({ ok: false, result: 'ERROR', message: 'Event not found.' });
 
   if (!token) return res.json({ ok: true, result: 'INVALID', message: 'Invalid ticket — this is not a card from this system.' });
@@ -73,7 +75,9 @@ exports.verify = async (req, res) => {
 exports.undo = async (req, res) => {
   const eventId = Number(req.body.eventId);
   const token = extractToken(req.body.token);
-  const event = Number.isInteger(eventId) ? await Event.findOne({ where: { id: eventId, userId: req.session.userId } }) : null;
+  const event = Number.isInteger(eventId)
+    ? await Event.findOne({ where: req.session?.adminAuthenticated ? { id: eventId } : { id: eventId, userId: req.session.userId } })
+    : null;
   if (!event || !token) return res.status(404).json({ ok: false, message: 'Not found.' });
   const [updated] = await Guest.update(
     { attendanceStatus: 'INVITED', checkedInAt: null },

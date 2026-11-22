@@ -4,6 +4,7 @@ const { Op, fn, col } = require('sequelize');
 const { AdminUser, User, Event, Guest } = require('../models');
 const { formatDateTime, formatShortDateTime } = require('../utils/format');
 const { deleteEvent } = require('../services/eventDeletionService');
+const { isEventBusy } = require('./guestController');
 
 const PAGE_SIZE = 25;
 
@@ -189,6 +190,13 @@ exports.confirmEventDeletion = async (req, res) => {
 exports.deleteEvent = async (req, res) => {
   const event = await findEventForDeletion(req, res);
   if (!event) return;
+  if (isEventBusy(event.id)) {
+    return res.status(409).render('error', {
+      layoutMode: 'bare',
+      title: 'Event is busy',
+      message: 'Wait for the current card or message job to finish before deleting this event.',
+    });
+  }
   await deleteEvent(event);
   const parsedPage = Number.parseInt(req.body.page, 10);
   const page = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;

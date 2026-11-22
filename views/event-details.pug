@@ -1,11 +1,16 @@
 extends layout
 
 block content
-  #eventPage.frame(data-event-id=event.id data-sms-provider=smsProvider data-wa-provider=waProvider data-accent=event.accentColor)
+  #eventPage.frame(data-event-id=event.id data-admin-mode=adminMode data-sms-provider=smsProvider data-wa-provider=waProvider data-accent=event.accentColor)
     header.event-head(style=`--accent:${event.accentColor}`)
       .lead-col
-        a.back-link(href='/dashboard') ← All events
+        if adminMode
+          a.back-link(href='/admin') ← Admin console
+        else
+          a.back-link(href='/dashboard') ← All events
         h1= event.eventName
+        if adminMode && owner
+          p.small.text-muted.mb-2 Managing for #{owner.fullName} · #[a(href=`mailto:${owner.email}`)= owner.email]
         .facts-line
           span
             span.dot(style=`background:${event.accentColor}`)
@@ -17,8 +22,15 @@ block content
               |  · 
               a(href=event.mapsLink target='_blank' rel='noopener noreferrer') Map
       .act-col
+        button.btn.btn-outline-primary(type='button' data-bs-toggle='modal' data-bs-target='#editEventModal') Edit event
+        if adminMode
+          a.btn.btn-outline-danger(href=`/admin/events/${event.id}/delete`) Delete event
+        else
+          button.btn.btn-outline-danger#btnDeleteEvent(type='button') Delete event
         a.btn.btn-primary(href=`/scanner/${event.id}`) Open gate scanner
         a.btn.btn-outline-primary(href=`/api/events/${event.id}/guests/export`) Export CSV
+    if adminMode
+      .alert.alert-warning.mt-3.mb-0(role='status') Administrator access is enabled for this event. Sending invitations or thank-you messages uses the event owner’s credits.
 
     .tally#statsRow(aria-label='Event statistics')
       each item in [{k:'total',l:'Guests',i:'bi-people'},{k:'withCards',l:'Cards ready',i:'bi-ticket-perforated'},{k:'smsSent',l:'SMS sent',i:'bi-chat-left-text'},{k:'waSent',l:'WhatsApp sent',i:'bi-whatsapp'},{k:'attended',l:'Checked in',i:'bi-check2-circle'}]
@@ -72,6 +84,49 @@ block content
       .table-foot
         small#guestRange
         .btn-group.btn-group-sm#pager
+
+    .modal.fade#editEventModal(tabindex='-1' aria-hidden='true')
+      .modal-dialog.modal-dialog-centered
+        .modal-content
+          form#editEventForm(novalidate)
+            .modal-header
+              h2.modal-title.h5 Edit event details
+              button.btn-close(type='button' data-bs-dismiss='modal' aria-label='Close')
+            .modal-body
+              .alert.alert-danger.d-none#editEventError(role='alert')
+              p.small.text-muted Updating event details will regenerate guest cards. Previously sent cards cannot be changed on guests' phones.
+              .mb-3
+                label.form-label(for='editEventName') Event name
+                input#editEventName.form-control(type='text' name='eventName' maxlength='160' minlength='3' value=event.eventName required)
+              .mb-3
+                label.form-label(for='editEventDate') Date &amp; time
+                input#editEventDate.form-control(type='datetime-local' name='eventDate' value=event.eventDateInput required)
+              .mb-3
+                label.form-label(for='editEventVenue') Venue
+                input#editEventVenue.form-control(type='text' name='venue' maxlength='255' minlength='2' value=event.venue required)
+              .mb-1
+                label.form-label(for='editEventMapsLink') Google Maps link #[span.text-muted (optional)]
+                input#editEventMapsLink.form-control(type='url' name='mapsLink' maxlength='500' value=event.mapsLink)
+              .mt-4
+                label.form-label.d-block Choose a card template
+                .template-grid.edit-template-grid
+                  if event.usesCustomBackground
+                    .template-option
+                      input(type='radio' name='templateId' id='edit-template-custom' value='custom' checked required)
+                      label(for='edit-template-custom')
+                        img(src=event.background alt='Current uploaded background' loading='lazy')
+                        span Keep uploaded background
+                  each template in templates
+                    .template-option
+                      input(type='radio' name='templateId' id=`edit-template-${template.id}` value=template.id checked=event.usesCustomBackground ? false : template.selected required)
+                      label(for=`edit-template-${template.id}`)
+                        img(src=template.previewUrl alt=`${template.name} card template` loading='lazy')
+                        span= template.name
+            .modal-footer
+              button.btn.btn-light(type='button' data-bs-dismiss='modal') Cancel
+              button.btn.btn-primary(type='submit')
+                span.spinner-border.spinner-border-sm.me-2.d-none
+                | Save changes
 
     //- ---------- Add guest modal ----------
     .modal.fade#guestModal(tabindex='-1' aria-hidden='true')

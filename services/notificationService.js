@@ -98,44 +98,47 @@ const WHATSAPP_PROVIDERS = {
   // Meta WhatsApp Cloud API.
   // Free-form image messages only reach users who messaged you in the last 24h.
   // For cold outreach, set WHATSAPP_CLOUD_TEMPLATE to an approved template with an IMAGE header
-  // and one body variable (guest name); it is sent instead of a free-form message.
-  cloudapi: async ({ to, imageUrl, caption, guestName }) => {
-    const { WHATSAPP_CLOUD_TOKEN, WHATSAPP_CLOUD_PHONE_ID, WHATSAPP_CLOUD_TEMPLATE, WHATSAPP_CLOUD_TEMPLATE_LANG } =
-      process.env;
-    const version = process.env.WHATSAPP_CLOUD_API_VERSION || 'v21.0';
+  // and one body variable; the variable includes the guest name and optional map URL.
+  // cloudapi: async ({ to, imageUrl, caption, guestName, mapsLink }) => {
+  //   const { WHATSAPP_CLOUD_TOKEN, WHATSAPP_CLOUD_PHONE_ID, WHATSAPP_CLOUD_TEMPLATE, WHATSAPP_CLOUD_TEMPLATE_LANG } =
+  //     process.env;
+  //   const version = process.env.WHATSAPP_CLOUD_API_VERSION || 'v21.0';
 
-    const payload = WHATSAPP_CLOUD_TEMPLATE
-      ? {
-          messaging_product: 'whatsapp',
-          to,
-          type: 'template',
-          template: {
-            name: WHATSAPP_CLOUD_TEMPLATE,
-            language: { code: WHATSAPP_CLOUD_TEMPLATE_LANG || 'en' },
-            components: [
-              { type: 'header', parameters: [{ type: 'image', image: { link: imageUrl } }] },
-              { type: 'body', parameters: [{ type: 'text', text: guestName }] },
-            ],
-          },
-        }
-      : { messaging_product: 'whatsapp', to, type: 'image', image: { link: imageUrl, caption } };
+  //   const payload = WHATSAPP_CLOUD_TEMPLATE
+  //     ? {
+  //         messaging_product: 'whatsapp',
+  //         to,
+  //         type: 'template',
+  //         template: {
+  //           name: WHATSAPP_CLOUD_TEMPLATE,
+  //           language: { code: WHATSAPP_CLOUD_TEMPLATE_LANG || 'en' },
+  //           components: [
+  //             { type: 'header', parameters: [{ type: 'image', image: { link: imageUrl } }] },
+  //             {
+  //               type: 'body',
+  //               parameters: [{ type: 'text', text: `${guestName}${mapsLink ? `\nMap: ${mapsLink}` : ''}` }],
+  //             },
+  //           ],
+  //         },
+  //       }
+  //     : { messaging_product: 'whatsapp', to, type: 'image', image: { link: imageUrl, caption } };
 
-    const r = await httpRequest(`https://graph.facebook.com/${version}/${WHATSAPP_CLOUD_PHONE_ID}/messages`, {
-      headers: { Authorization: `Bearer ${WHATSAPP_CLOUD_TOKEN}` },
-      body: payload,
-    });
-    return { ok: r.ok && Boolean(r.data?.messages?.length), response: r.data };
-  },
+  //   const r = await httpRequest(`https://graph.facebook.com/${version}/${WHATSAPP_CLOUD_PHONE_ID}/messages`, {
+  //     headers: { Authorization: `Bearer ${WHATSAPP_CLOUD_TOKEN}` },
+  //     body: payload,
+  //   });
+  //   return { ok: r.ok && Boolean(r.data?.messages?.length), response: r.data };
+  // },
 
-  // Twilio WhatsApp (sandbox or approved sender)
-  twilio: async ({ to, imageUrl, caption }) => {
-    const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM } = process.env;
-    const r = await httpRequest(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`, {
-      headers: { Authorization: basicAuth(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN) },
-      form: { From: `whatsapp:${TWILIO_WHATSAPP_FROM}`, To: `whatsapp:${toE164(to)}`, Body: caption, MediaUrl: imageUrl },
-    });
-    return { ok: r.ok && !r.data?.error_code, response: r.data };
-  },
+  // // Twilio WhatsApp (sandbox or approved sender)
+  // twilio: async ({ to, imageUrl, caption }) => {
+  //   const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM } = process.env;
+  //   const r = await httpRequest(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`, {
+  //     headers: { Authorization: basicAuth(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN) },
+  //     form: { From: `whatsapp:${TWILIO_WHATSAPP_FROM}`, To: `whatsapp:${toE164(to)}`, Body: caption, MediaUrl: imageUrl },
+  //   });
+  //   return { ok: r.ok && !r.data?.error_code, response: r.data };
+  // },
 
   // UltraMsg
   ultramsg: async ({ to, imageUrl, caption }) => {
@@ -155,24 +158,24 @@ const WHATSAPP_TEXT_PROVIDERS = {
     return { ok: true, response: { dryRun: true } };
   },
 
-  cloudapi: async ({ to, message }) => {
-    const { WHATSAPP_CLOUD_TOKEN, WHATSAPP_CLOUD_PHONE_ID } = process.env;
-    const version = process.env.WHATSAPP_CLOUD_API_VERSION || 'v21.0';
-    const r = await httpRequest(`https://graph.facebook.com/${version}/${WHATSAPP_CLOUD_PHONE_ID}/messages`, {
-      headers: { Authorization: `Bearer ${WHATSAPP_CLOUD_TOKEN}` },
-      body: { messaging_product: 'whatsapp', to, type: 'text', text: { body: message } },
-    });
-    return { ok: r.ok && Boolean(r.data?.messages?.length), response: r.data };
-  },
+  // cloudapi: async ({ to, message }) => {
+  //   const { WHATSAPP_CLOUD_TOKEN, WHATSAPP_CLOUD_PHONE_ID } = process.env;
+  //   const version = process.env.WHATSAPP_CLOUD_API_VERSION || 'v21.0';
+  //   const r = await httpRequest(`https://graph.facebook.com/${version}/${WHATSAPP_CLOUD_PHONE_ID}/messages`, {
+  //     headers: { Authorization: `Bearer ${WHATSAPP_CLOUD_TOKEN}` },
+  //     body: { messaging_product: 'whatsapp', to, type: 'text', text: { body: message } },
+  //   });
+  //   return { ok: r.ok && Boolean(r.data?.messages?.length), response: r.data };
+  // },
 
-  twilio: async ({ to, message }) => {
-    const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM } = process.env;
-    const r = await httpRequest(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`, {
-      headers: { Authorization: basicAuth(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN) },
-      form: { From: `whatsapp:${TWILIO_WHATSAPP_FROM}`, To: `whatsapp:${toE164(to)}`, Body: message },
-    });
-    return { ok: r.ok && !r.data?.error_code, response: r.data };
-  },
+  // twilio: async ({ to, message }) => {
+  //   const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM } = process.env;
+  //   const r = await httpRequest(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`, {
+  //     headers: { Authorization: basicAuth(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN) },
+  //     form: { From: `whatsapp:${TWILIO_WHATSAPP_FROM}`, To: `whatsapp:${toE164(to)}`, Body: message },
+  //   });
+  //   return { ok: r.ok && !r.data?.error_code, response: r.data };
+  // },
 
   ultramsg: async ({ to, message }) => {
     const { ULTRAMSG_INSTANCE_ID, ULTRAMSG_TOKEN } = process.env;
@@ -197,7 +200,7 @@ function buildMessages(guest, event) {
 
   if (lang === 'en') {
     return {
-      sms: `Dear ${guest.guestName}, you are invited to ${event.eventName} on ${date}, ${time} hrs at ${event.venue}. Your ${guest.cardType} card (admits ${admits}): ${link}`,
+      sms: `Dear ${guest.guestName}, you are invited to ${event.eventName} on ${date}, ${time} hrs at ${event.venue}. Your ${guest.cardType} card (admits ${admits}): ${link}${maps}`,
       whatsapp:
         `Dear *${guest.guestName}*,\nYou are warmly invited to *${event.eventName}*.\n\n` +
         `📅 ${date}, ${time} hrs\n📍 ${event.venue}${maps}\n🎫 ${guest.cardType} card (admits ${admits})\n\n` +
@@ -205,7 +208,7 @@ function buildMessages(guest, event) {
     };
   }
   return {
-    sms: `Ndugu ${guest.guestName}, unakaribishwa ${event.eventName} tarehe ${date}, saa ${time} katika ${event.venue}. Kadi yako (${guest.cardType === 'Double' ? 'Double - watu 2' : 'Single - mtu 1'}): ${link}`,
+    sms: `Ndugu ${guest.guestName}, unakaribishwa ${event.eventName} tarehe ${date}, saa ${time} katika ${event.venue}. Kadi yako (${guest.cardType === 'Double' ? 'Double - watu 2' : 'Single - mtu 1'}): ${link}${maps}`,
     whatsapp:
       `Ndugu *${guest.guestName}*,\nUnakaribishwa kwa heshima kubwa katika *${event.eventName}*.\n\n` +
       `📅 ${date}, saa ${time}\n📍 ${event.venue}${maps}\n🎫 Kadi ${guest.cardType === 'Double' ? 'Double (watu 2)' : 'Single (mtu 1)'}\n\n` +
@@ -241,6 +244,7 @@ async function send(channel, guest, event) {
             imageUrl: `${appUrl()}${guest.generatedCardUrl}`,
             caption: messages.whatsapp,
             guestName: guest.guestName,
+            mapsLink: event.mapsLink,
           });
     return { ok: Boolean(result.ok), provider: name, response: result.response };
   } catch (err) {

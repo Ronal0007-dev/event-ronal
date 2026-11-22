@@ -102,6 +102,7 @@ app.use(
 // Template locals
 app.use((req, res, next) => {
   res.locals.currentUserId = req.session?.userId || null;
+  res.locals.adminAuthenticated = Boolean(req.session?.adminAuthenticated);
   res.locals.layoutMode = 'app';
   next();
 });

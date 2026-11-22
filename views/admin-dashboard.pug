@@ -126,9 +126,13 @@ block content
                             span
                               i.bi.bi-check2-circle(aria-hidden='true')
                               |  #{event.attended} checked in
-                        a.btn.btn-sm.btn-outline-danger(href=`/admin/events/${event.id}/delete?page=${page}` aria-label=`Delete ${event.eventName}` title='Delete event')
-                          i.bi.bi-trash3(aria-hidden='true')
-                          span Delete
+                        .admin-event-actions
+                          a.btn.btn-sm.btn-outline-primary(href=`/admin/events/${event.id}/manage` aria-label=`Manage ${event.eventName}` title='Manage event')
+                            i.bi.bi-box-arrow-up-right(aria-hidden='true')
+                            span Manage
+                          a.btn.btn-sm.btn-outline-danger(href=`/admin/events/${event.id}/delete?page=${page}` aria-label=`Delete ${event.eventName}` title='Delete event')
+                            i.bi.bi-trash3(aria-hidden='true')
+                            span Delete
                 else
                   p.admin-no-events No events created yet.
       else
