@@ -4,7 +4,7 @@ html(lang='en')
     meta(charset='utf-8')
     meta(name='viewport' content='width=device-width, initial-scale=1, viewport-fit=cover')
     meta(name='theme-color' content='#f7f4ee')
-    title #{title} · Event Invite
+    title #{title} · Digify
     link(href='/vendor/bootstrap/bootstrap.min.css' rel='stylesheet')
     link(href='/vendor/bootstrap-icons/bootstrap-icons.min.css' rel='stylesheet')
     link(rel='icon' href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2317150f'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23d9481f'/%3E%3C/svg%3E")
@@ -14,8 +14,8 @@ html(lang='en')
     if layoutMode !== 'bare'
       header.site-nav#siteNav
         .nav-inner
-          a.brand(href='/') Event Invite
-            i
+          a.brand(href='/' aria-label='DigiFy home')
+            img.brand-logo(src='/img/showcase/digify-logo.svg' alt='DigiFy')
           if layoutMode === 'landing'
             ul.nav-links
               li: a(href='#how') How it works
